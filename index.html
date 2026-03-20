@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#2e7d32">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="./manifest.json">
     <title>Gerador de Carnês</title>
 
@@ -15,65 +13,120 @@
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; margin: 0; padding-bottom: 140px; }
-        header { background-color: #2e7d32; color: white; padding: 14px; text-align: center; font-weight: 600; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .recibo-container { width: 100%; max-width: 820px; margin: 15px auto; padding: 0 8px; }
-        .recibo { display: flex; flex-wrap: wrap; border: 1px solid #000; background: #fff; width: 820px; margin: 0 auto; }
-        .lado { width: 50%; padding: 10px; border-right: 1px dashed #000; }
-        .lado:last-child { border-right: none; background: #fafafa; }
-        .campo { margin-bottom: 6px; display: flex; align-items: flex-end; }
-        .campo label { width: 60px; font-weight: 700; font-size: 12px; }
-        .linha { border: none; border-bottom: 1px solid #000; width: 100%; font-family: monospace; font-size: 15px; font-weight: 700; background: transparent; }
-        .botoes-container { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 900; }
-        .botao { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; border: none; text-transform: uppercase; cursor: pointer; }
-        .primario { background: #2e7d32; color: white; font-size: 15px; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        @media (max-width: 650px) { .recibo { flex-direction: column; width: 100%; } .lado { width: 100%; border-right: none; border-bottom: 1px dashed #000; } }
-        @media all and (display-mode: standalone) { header { padding-top: env(safe-area-inset-top); } }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; padding-bottom: 160px; }
+        header { background-color: #2e7d32; color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        .recibo-container { width: 100%; max-width: 850px; margin: 20px auto; padding: 10px; }
+        
+        /* Estilo do Carnê */
+        .recibo { display: flex; border: 2px solid #333; background: #fff; margin-bottom: 15px; min-height: 180px; position: relative; }
+        .lado-esquerdo { width: 40%; padding: 10px; border-right: 2px dashed #333; background: #fafafa; }
+        .lado-direito { width: 60%; padding: 10px; }
+        
+        .campo { margin-bottom: 8px; }
+        .campo label { display: block; font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; }
+        .linha { border: none; border-bottom: 1px solid #333; width: 100%; font-family: monospace; font-size: 14px; font-weight: bold; background: transparent; padding: 2px 0; outline: none; }
+        
+        .titulo-recibo { text-align: center; border-bottom: 1px solid #333; margin-bottom: 10px; font-weight: 900; }
+
+        /* Controles Fixos Embaixo */
+        .botoes-fixos { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -3px 15px rgba(0,0,0,0.1); z-index: 900; }
+        .linha-controles { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; text-transform: uppercase; font-size: 14px; }
+        
+        .btn-gerar { background: #1976d2; }
+        .btn-limpar { background: #f57c00; flex: 0.5; }
+        .btn-pdf { background: #2e7d32; width: 100%; display: block; }
+        
+        input[type="number"] { width: 70px; border-radius: 8px; border: 1px solid #ccc; text-align: center; font-size: 18px; }
+
+        @media (max-width: 600px) {
+            .recibo { flex-direction: column; border-bottom: 4px double #333; }
+            .lado-esquerdo, .lado-direito { width: 100%; border-right: none; border-bottom: 2px dashed #333; }
+        }
     </style>
 </head>
 <body>
-    <header>Gerador de Carnês</header>
-    <div id="loading"><p>Gerando PDF...</p></div>
-    <div class="recibo-container" id="recibo-container"></div>
-    <div class="botoes-container">
-        <div style="display:flex; gap:10px;">
-            <input type="number" id="quantidade-recibos" value="1" style="width:60px; text-align:center;">
-            <button class="botao" id="gerar-mais" style="background:#1976d2; color:white;">+ Gerar</button>
-            <button class="botao" id="limpar-base" style="background:#f57c00; color:white;">Limpar</button>
-        </div>
-        <button class="botao primario" id="gerar-pdf">Baixar PDF</button>
+
+<header>GERADOR DE CARNÊS PROFISSIONAL</header>
+
+<div class="recibo-container" id="area-recibos">
     </div>
 
-    <template id="recibo-template">
-        <div class="recibo-wrapper" style="margin-bottom:20px;">
-            <div class="recibo" id="recibo-ID">
-                <div class="lado">
-                    <div class="campo"><label>Nome:</label><input class="linha" id="nome-ID" type="text"></div>
-                    <div class="campo"><label>CPF:</label><input class="linha" id="cpf-ID" type="tel"></div>
-                    <div class="campo"><label>Venc:</label><input class="linha" id="venc-ID" type="tel"></div>
-                    <div class="campo"><label>Valor:</label><input class="linha" id="valor-ID" type="tel"></div>
-                </div>
-                <div class="lado">
-                    <div style="text-align:center; font-weight:bold; margin-bottom:10px;" id="titulo-recibo-ID">Recibo</div>
-                    <div class="campo"><label>Nome:</label><input class="linha" id="nome-lado2-ID" type="text"></div>
-                    <div class="campo"><label>Valor:</label><input class="linha" id="valor-lado2-ID" type="text"></div>
-                    <div style="height:50px; border-top:1px dotted #ccc; margin-top:10px;"></div>
-                </div>
-            </div>
-        </div>
-    </template>
+<div class="botoes-fixos">
+    <div class="linha-controles">
+        <input type="number" id="qtd" value="1" min="1" max="12">
+        <button class="btn btn-gerar" onclick="gerarRecibos()">+ GERAR</button>
+        <button class="btn btn-limpar" onclick="limpar()">LIMPAR</button>
+    </div>
+    <button class="btn btn-pdf" onclick="baixarPDF()">BAIXAR PDF</button>
+</div>
 
-    <script>
-        // Lógica de registro do Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW ativo'))
-                    .catch(err => console.log('Erro SW', err));
-            });
+<script>
+    const area = document.getElementById('area-recibos');
+
+    function gerarRecibos() {
+        const quantidade = document.getElementById('qtd').value;
+        const dataInicial = moment().format('YYYY-MM-DD');
+
+        for (let i = 1; i <= quantidade; i++) {
+            const id = Date.now() + i;
+            const novaData = moment().add(i - 1, 'months').format('DD/MM/YYYY');
+            
+            const html = `
+                <div class="recibo" id="bloco-${id}">
+                    <div class="lado-esquerdo">
+                        <div class="campo"><label>Parcela</label><input class="linha" value="${i}/${quantidade}"></div>
+                        <div class="campo"><label>Vencimento</label><input class="linha" value="${novaData}"></div>
+                        <div class="campo"><label>Valor R$</label><input class="linha" placeholder="0,00"></div>
+                    </div>
+                    <div class="lado-direito">
+                        <div class="titulo-recibo">COMPROVANTE DE PAGAMENTO</div>
+                        <div class="campo"><label>Pagador</label><input class="linha" type="text" placeholder="Nome Completo"></div>
+                        <div class="campo"><label>Referente a</label><input class="linha" type="text" placeholder="Descrição do serviço"></div>
+                        <div class="campo" style="display:flex; gap:10px;">
+                            <div style="flex:1"><label>Data</label><input class="linha" value="${novaData}"></div>
+                            <div style="flex:1"><label>Assinatura</label><div class="linha"></div></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            area.insertAdjacentHTML('beforeend', html);
         }
-        // [Aqui entra o restante da sua lógica JavaScript de geração de recibos]
-    </script>
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function limpar() {
+        if(confirm("Limpar todos os recibos?")) area.innerHTML = "";
+    }
+
+    async function baixarPDF() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const elementos = document.querySelectorAll('.recibo');
+        
+        if (elementos.length === 0) return alert("Gere ao menos um recibo primeiro!");
+
+        for (let i = 0; i < elementos.length; i++) {
+            const canvas = await html2canvas(elementos[i], { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            
+            // Adiciona 3 recibos por página
+            const yPos = (i % 3) * 90 + 10; 
+            if (i > 0 && i % 3 === 0) pdf.addPage();
+            
+            pdf.addImage(imgData, 'PNG', 10, yPos, 190, 80);
+        }
+        
+        pdf.save(`carnes_${moment().format('DD-MM')}.pdf`);
+    }
+
+    // Registro do Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js');
+    }
+</script>
+
 </body>
+</html>
 </html>
